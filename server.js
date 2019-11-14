@@ -35,12 +35,12 @@ const Register = mongoose.model("Register", registerSchema);
 
 /* Routes */
 //Get reads the registerform.pug and displays it on the path
-app.get("/register_form", (req, res) => {
+app.get("/register", (req, res) => {
   res.render("register_form");
 });
 
 //extracts all data for the database and displays it
-app.post("/register_form", (req, res) => {
+app.post("/register", (req, res) => {
   const register = new Register(req.body); //create an instance of the Register model for data entered(req.body==got from the user) 
   register.save() //and the model is the one saved to the database
     .then(item => { //.then promise and used because nodejs asyncronously waits

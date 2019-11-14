@@ -1,0 +1,24 @@
+//- users is the variable name----looping through the collection,so that we don't repeat ourselves.....user is a variable for users
+extends layout
+block content
+    div.row.justify-content-center
+            div.col-md-5
+                div.card-body.border
+                    header.card-header  
+                        h4.card-title Registerd users
+                    table.table
+                        thead.thead-dark
+                            tr
+                                th Firstname
+                                th Lastname
+                                th Gender
+                                th City
+                                th Country
+                            tbody
+                                each user in users
+                                    tr
+                                        td #{user.firstname}  
+                                        td #{user.lastname} 
+                                        td #{user.gender}
+                                        td #{user.city}   
+                                        td #{user.country}
