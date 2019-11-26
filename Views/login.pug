@@ -1,0 +1,24 @@
+/signup.jade
+!!! 5
+html
+  head
+   title 
+
+  body
+
+    h1 Sign Up
+
+    form(name = "find", action = "/users/create", method = "post")
+      | Firstname
+      input(type="text", name="firstname", id="firstname")
+      br
+      | Lastname
+      input(type="text", name="lastname", id="lastname")
+      br
+      | Email
+      input(type="text", name="email", id="email")
+      br
+      | Password
+      input(type="password", name="password", id="password")
+      br
+      input(type="submit", value="Search")
