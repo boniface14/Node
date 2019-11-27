@@ -1,31 +1,141 @@
-/* require is a keyword used to use a package and below are the packages */
-const express = require("express"); 
-const path = require("path");
-const bodyParser = require("body-parser");
+const express = require("express");
 const mongoose = require("mongoose");
-
-const app = express();// now we have our express app
-
-// middleware
-app.set("view engine", "pug"); //setting the view engine as pug
-app.set("views", path.join(__dirname, "views")); //there's a folder called views and this is how to get it
-app.use(bodyParser.urlencoded({ extended: true })); //for geting the posted data from the form in the console/body and the output is json
-// app.use(bodyParser.json());
-
-//import routes
-const RegistrationRoute = require("./routes/routes")
-app.use("/register",RegistrationRoute)
-
-/* mongoose db connection */
-mongoose.Promise = global.Promise;
-mongoose.connect("mongodb://localhost:27017/node-demo");//
+const bodyParser = require("body-parser");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs"); // requring the file system
+const mongodb = require("mongodb");
+const session = require("express-session");
+//to use express in node u use app.
+const app = express();
 
 
-/* creates documents in the db------------------------------------- name of the collection model(collection storage,schemaStructure)....takes on the structure of schema and the req.body(user data) into the Register collection */
-//const Register = mongoose.model("Register", registerSchema);
+// Mongoose connects the app to the mongoDB.
+mongoose.connect("mongodb://localhost:27017/node-demo",()=>{
+  console.log("connected successfully to databse")
+});
 
 
-/* listening for requests: the server */
-app.listen(3000, function() {
-  console.log("Express listening  on 3000");
+app.set("view engine", "pug");
+app.set("views", path.join(__dirname, "views"));
+app.use(bodyParser.urlencoded({ extended: true })); // body-parser to parse request body data. if not used it show undefined data.
+//becoz we are getting  the data from a url.
+
+//express-session for tracking user's activity    or tracking logins
+app.use(session({
+secret:"thesecret",
+resave: true,
+saveUninitialized: false
+
+}));
+
+// import routes
+const registrationRoutes = require("./routes/registerroutes");
+app.use("/register", registrationRoutes);
+
+const loginRoutes = require("./routes/loginroute");
+app.use("/login", loginRoutes);
+
+
+
+
+
+
+
+// creating the storage.
+var storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, "uploads");
+  },
+  filename: function(req, file, cb) {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
+  }
+});
+
+// initialising multer
+var upload = multer({
+  storage: storage
+});
+// configuring mongodb and connecting to mongo campus
+var MongoClient = mongodb.MongoClient;
+const url = "mongodb://localhost:27017";
+//
+MongoClient.connect(
+  url,
+  {
+    useUnifiedTopology: true,
+    useNewUrlParser: true
+  },
+  (err, client) => {
+    // call back
+    if (err) return console.log(err); // checking for error
+    db = client.db("images");
+    app.listen(3001, () => {
+      console.log("Mongodb server Listening at 3001");
+    });
+  }
+);
+/* var nameSchema = new mongoose.Schema({
+  firstname: String,
+  lastname: String
+}); */
+
+app.get("/", (req, res) => {
+  res.render("register");
+});
+
+
+
+
+// configuring the upload file route
+app.post("/uploadfile", upload.single("myFile"), (req, res, next) => {
+  const file = req.file; // fetches the files
+  // check if the file exist
+  if (!file) {
+    const error = new Error("Please upload a file");
+    console.log(file);
+    error.httpStatusCode = 400;
+    return next(error);
+  }
+  res.send(file);
+});
+// configure the multiple file routes
+app.post("/uploadmultiple", upload.array("myFiles", 2), (req, res, next) => {
+  const files = req.files;
+  if (!files) {
+    const error = new Error("Please choose files");
+    error.httpStatusCode = 400;
+    return next(error);
+  }
+  res.send(files);
+});
+// configuring image upload to the database
+app.post("/uploadphoto", upload.single("myImage"), (req, res) => {
+  var img = fs.readFileSync(req.file.path);
+  var encode_image = img.toString("base64");
+  // Defining a JSON Object for the image
+  var finalImg = {
+    contentType: req.file.mimetype,
+    path: req.file.path,
+    image: new Buffer(encode_image, "base64")
+  }; // not working
+  // Insert the image to the database
+  db.collection("image").insertOne(finalImg, (err, result) => {
+    console.log(result);
+    if (err) return console.log(err);
+    console.log("Saved to database");
+    res.contentType(finalImg.contentType);
+    res.send(finalImg.image);
+  });
+});
+
+
+
+// configuring the home route
+//Setting the server and to Listen to port 3000
+app.listen(3000, () => {
+  console.log("listening on 3000");
 });
